@@ -7,13 +7,14 @@ class ImageTask(models.Model):
     width = models.IntegerField()
     height = models.IntegerField()
 
+class Category(models.Model):
+    image_task = models.ForeignKey(ImageTask, on_delete=models.CASCADE)
+    name = models.CharField(max_length=20)
+
 class ImageObject(models.Model):
     image_task = models.ForeignKey(ImageTask, on_delete=models.CASCADE)
     x = models.IntegerField()
     y = models.IntegerField()
     w = models.IntegerField()
     h = models.IntegerField()
-
-class Category(models.Model):
-    image_task = models.ForeignKey(ImageTask, on_delete=models.CASCADE)
-    name = models.CharField(max_length=20)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE)

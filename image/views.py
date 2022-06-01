@@ -1,3 +1,5 @@
+from tkinter import Y
+from django.http import Http404
 from django.shortcuts import redirect, render
 from helpers import get_image_size
 from .models import ImageObject, ImageTask, Category
@@ -27,3 +29,18 @@ def add_task(request):
         return redirect("/image/add")
     else:
         return render(request, "image/add.html")
+
+def submit_task(request):
+    if request.method == "POST":
+        task_id = request.POST["task_id"]
+        task = ImageTask.objects.get(id=int(task_id))
+        object_total = int(request.POST["object_total"])
+        for obj_index in range(object_total):
+            x = request.POST[f"obj" + obj_index + "-x"]
+            y = request.POST[f"obj" + obj_index + "-y"]
+            w = request.POST[f"obj" + obj_index + "-w"]
+            h = request.POST[f"obj" + obj_index + "-h"]
+            ImageObject.objects.create()
+
+    else:
+        return Http404()
