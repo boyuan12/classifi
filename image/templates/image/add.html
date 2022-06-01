@@ -1,0 +1,41 @@
+{% extends "image/base.html" %}
+
+{% block title %}
+    Add Image Task
+{% endblock %}
+
+{% block main %}
+    <div class="container">
+        <h1>Upload Image task</h1>
+        <p>To upload image task, we recommend your image file to be around 640 x 480.</p>
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="title" class="form-label">Project Title</label>
+                <input type="text" class="form-control" id="title" aria-describedby="titleHelp" name="title">
+                <div id="titleHelp" class="form-text">This is for your reference only; the contractor will NOT see this</div>
+            </div>
+            <div class="mb-3">
+                <label for="url" class="form-label">Image URL</label>
+                <input type="url" class="form-control" id="url" aria-describedby="url" name="url">
+            </div>
+            <div class="mb-3">
+                <label for="categories" class="form-label">Categories</label>
+                <input type="text" class="form-control" id="url" aria-describedby="categories" name="categories" aria-describedby="urlHelp">
+                <div id="titleHelp" class="form-text">Separate each category by a comma following by a space (e.g. fruits, ramens, stationaries)</div>
+            </div>
+            
+            <div>
+                <label for="Priority" class="form-label">Priority</label>
+                <select class="form-select" aria-label="Priority" name="priority">
+                    <option disabled>Priority level</option>
+                    <option value="1">Really Urgent</option>
+                    <option value="2">Urgent</option>
+                    <option value="3">Normal</option>
+                </select>
+            </div> <br>
+        
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+    </div>
+{% endblock %}

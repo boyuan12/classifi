@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>replit</title>
+  <script
+  src="https://code.jquery.com/jquery-3.6.0.js"
+  integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk="
+  crossorigin="anonymous"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
+
+  <style>
+    #canvasWrapper{
+      position:relative; 
+      width: 100px;
+      height: 100px;
+    }
+    
+    canvas{
+      border: 1px solid red;
+      position: absolute;
+    }
+  </style>
+</head>
+
+<body>
+  <h4>Drag the mouse to create a rectangle</h4>
+  <img src="https://as1.ftcdn.net/v2/jpg/04/04/92/40/1000_F_404924072_FFx5Ejd0ucMOBCSDMNmu31k4pBgF6upB.jpg" style="display: none" id="img">
+    <div id="canvasWrapper">
+      <canvas id="overlay"></canvas>
+      <canvas id="canvas"></canvas>
+    </div>
+    <br><br>
+    <div class="container">
+      <div class="row">
+        <div class="col-3">
+        <h4>Categories</h4>
+        {% for c in categories %}
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="category" id="{{ c.name }}" value="{{ c.name }}">
+            <label class="form-check-label" for="{{ c.name }}">
+              {{ c.name }}
+            </label>
+          </div>
+        {% endfor %}
+
+      </div>
+        <div class="col-6">
+          <h4>Objects</h4>
+          <div id="objects"></div>
+        </div>
+        <div class="col-3">
+            <!-- Button trigger modal -->
+            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#report">
+                Report Issue
+            </button>
+            
+            <!-- Modal -->
+            <div class="modal fade" id="report" tabindex="-1" aria-labelledby="report" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="exampleModalLabel">Report Issue</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form action="/image/report" method="POST">
+                                <input type="text" name="id" value="1234567" hidden>
+                                <div class="form-floating">
+                                    <textarea class="form-control" placeholder="Describe the issue..." id="issue" style="height: 100px" name="issue"></textarea>
+                                    <label for="issue">Describe the issue</label>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-primary">Save changes</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+      </div>
+
+
+
+    </div>
+  
+
+  <script>
+    var boxes = [] // [["category", x, y, w, h]]
+    // get references to the canvas and context
+    var canvas = document.getElementById("canvas");
+    var overlay = document.getElementById("overlay");
+    var ctx = canvas.getContext("2d");
+    var ctxo = overlay.getContext("2d");
+    
+    // style the context
+    ctx.strokeStyle = "blue";
+    ctx.lineWidth = 3;
+    ctxo.strokeStyle = "blue";
+    ctxo.lineWidth = 3;
+    
+    // calculate where the canvas is on the window
+    // (used to help calculate mouseX/mouseY)
+    var $canvas = $("#canvas");
+    var canvasOffset = $canvas.offset();
+    var offsetX = canvasOffset.left;
+    var offsetY = canvasOffset.top;
+    var scrollX = $canvas.scrollLeft();
+    var scrollY = $canvas.scrollTop();
+    
+    // this flage is true when the user is dragging the mouse
+    var isDown = false;
+    
+    // these vars will hold the starting mouse position
+    var startX;
+    var startY;
+    
+    var prevStartX = 0;
+    var prevStartY = 0;
+    
+    var prevWidth  = 0;
+    var prevHeight = 0;
+    
+    function handleMouseDown(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    
+        // save the starting x/y of the rectangle
+        startX = parseInt(e.clientX - offsetX);
+        startY = parseInt(e.clientY - offsetY);
+    
+        // set a flag indicating the drag has begun
+        isDown = true;
+    }
+    
+    function handleMouseUp(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    
+        // the drag is over, clear the dragging flag
+        isDown = false;
+        ctxo.strokeRect(prevStartX, prevStartY, prevWidth, prevHeight);
+        category = document.querySelector('input[name="category"]:checked').value;
+
+        boxes.push([category, prevStartX, prevStartY, prevWidth, prevHeight])
+
+      ctxo.strokeText(category, prevStartX, prevStartY+10);
+      updateObj();
+      
+    }
+    
+    function handleMouseOut(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    
+        // the drag is over, clear the dragging flag
+        isDown = false;
+    }
+    
+    function handleMouseMove(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    
+        // if we're not dragging, just return
+        if (!isDown) {
+            return;
+        }
+    
+        // get the current mouse position
+        mouseX = parseInt(e.clientX - offsetX);
+        mouseY = parseInt(e.clientY - offsetY);
+    
+        // Put your mousemove stuff here
+    
+        // calculate the rectangle width/height based
+        // on starting vs current mouse position
+        var width = mouseX - startX;
+        var height = mouseY - startY;
+    
+            // clear the canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+        // draw a new rect from the start position 
+        // to the current mouse position
+        ctx.strokeRect(startX, startY, width, height);
+        
+            prevStartX = startX;
+            prevStartY = startY;
+    
+            prevWidth  = width;
+            prevHeight = height;
+    }
+    
+    // listen for mouse events
+    $("#canvas").mousedown(function (e) {
+        handleMouseDown(e);
+    });
+    $("#canvas").mousemove(function (e) {
+        handleMouseMove(e);
+    });
+    $("#canvas").mouseup(function (e) {
+        handleMouseUp(e);
+    });
+    
+    $("#canvas").mouseout(function (e) {
+        handleMouseOut(e);
+    });
+
+    var imgUrl = "{{ task.image_url }}"
+    var img = new Image()
+    img.src = imgUrl
+    var imgWidth;
+    var imgHeight;
+
+    img.onload = function() {
+      console.log("Image loaded")
+    }
+    imgWidth = parseInt("{{ task.width }}");
+    imgHeight = parseInt("{{ task.height }}")
+
+    
+
+    // document.getElementById("canvasWrapper").style = `width: ${imgWidth}; height: ${imgHeight}; `
+    // var img = document.getElementById("img")
+    document.getElementById("canvasWrapper").setAttribute("style", `width: ${imgWidth}px; height: ${imgHeight}px; background: url("${img.src}")`)
+
+    if (imgWidth == 0) {
+      alert("Image is not populated correctly, please manually reload the page.")
+    }
+
+    canvas.width = imgWidth
+    canvas.height = imgHeight
+    overlay.width = imgWidth
+    overlay.height = imgHeight
+
+    function deleteBox(x, y, w, h) {
+        ctx.clearRect(x-10, y-10, w + 20, h + 20);
+        ctxo.clearRect(x-10, y-10, w + 20, h + 20);
+        document.getElementById(`${x}-${y}`).remove()
+
+      for( var i = 0; i < boxes.length; i++){ 
+          if ( boxes[i][1] === x && boxes[i][2] === y) { 
+              boxes.splice(i, 1); 
+          }
+      }
+  
+    }
+    
+  function updateObj() {
+    document.getElementById("objects").innerHTML = ""
+    for (let i=0; i<boxes.length; i++) {
+      var obj = document.createElement("div")
+      obj.innerHTML  = `${boxes[i][0]} (${boxes[i][1]}, ${boxes[i][2]}), ${boxes[i][3]}px * ${boxes[i][4]}px <span class="badge text-bg-danger" onclick="deleteBox(${boxes[i][1]}, ${boxes[i][2]}, ${boxes[i][3]}, ${boxes[i][4]})">Delete</span>`
+      obj.setAttribute("id", `${boxes[i][1]}-${boxes[i][2]}`)
+      document.getElementById("objects").appendChild(obj)
+    }
+
+
+  }
+  </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.5/dist/umd/popper.min.js" integrity="sha384-Xe+8cL9oJa6tN/veChSP7q+mnSPaj5Bcu9mPX5F5xIGE0DVittaqT5lorf0EI7Vk" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.min.js" integrity="sha384-kjU+l4N0Yf4ZOJErLsIcvOU2qSb74wXpOhqTvwVx3OElZRweTnQ6d31fXEoRD1Jy" crossorigin="anonymous"></script>
+</body>
+
+</html>
