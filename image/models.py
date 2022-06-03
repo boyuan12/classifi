@@ -6,6 +6,7 @@ class ImageTask(models.Model):
     image_url = models.URLField()
     width = models.IntegerField()
     height = models.IntegerField()
+    is_complete = models.BooleanField(default=False)
 
 class Category(models.Model):
     image_task = models.ForeignKey(ImageTask, on_delete=models.CASCADE)

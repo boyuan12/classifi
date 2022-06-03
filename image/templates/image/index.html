@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width">
-  <title>replit</title>
+  <title>Image Task</title>
   <script
   src="https://code.jquery.com/jquery-3.6.0.js"
   integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk="
@@ -83,6 +83,11 @@
                     </div>
                 </div>
             </div>
+
+            <button type="button" class="btn btn-success" onclick="submitTask()" id="submitButton">
+              Submit 
+            </button>
+          
         </div>
       </div>
 
@@ -252,17 +257,47 @@
   
     }
     
-  function updateObj() {
-    document.getElementById("objects").innerHTML = ""
-    for (let i=0; i<boxes.length; i++) {
-      var obj = document.createElement("div")
-      obj.innerHTML  = `${boxes[i][0]} (${boxes[i][1]}, ${boxes[i][2]}), ${boxes[i][3]}px * ${boxes[i][4]}px <span class="badge text-bg-danger" onclick="deleteBox(${boxes[i][1]}, ${boxes[i][2]}, ${boxes[i][3]}, ${boxes[i][4]})">Delete</span>`
-      obj.setAttribute("id", `${boxes[i][1]}-${boxes[i][2]}`)
-      document.getElementById("objects").appendChild(obj)
+    function updateObj() {
+      document.getElementById("objects").innerHTML = ""
+      for (let i=0; i<boxes.length; i++) {
+        var obj = document.createElement("div")
+        obj.innerHTML  = `${boxes[i][0]} (${boxes[i][1]}, ${boxes[i][2]}), ${boxes[i][3]}px * ${boxes[i][4]}px <span class="badge text-bg-danger" onclick="deleteBox(${boxes[i][1]}, ${boxes[i][2]}, ${boxes[i][3]}, ${boxes[i][4]})">Delete</span>`
+        obj.setAttribute("id", `${boxes[i][1]}-${boxes[i][2]}`)
+        document.getElementById("objects").appendChild(obj)
     }
 
 
+    
+
   }
+  function submitTask() {
+      body = {}
+      body["task_id"] = "{{ task.id }}" 
+      body["object_total"] = boxes.length
+
+      for (let i=0; i<boxes.length; i++) {
+        body["obj" + i + "-x"] = boxes[i][1]
+        body["obj" + i + "-y"] = boxes[i][2]
+        body["obj" + i + "-w"] = boxes[i][3]
+        body["obj" + i + "-h"] = boxes[i][4]
+        body["obj" + i + "-category"] = boxes[i][0]
+      }
+
+      console.log(body)
+
+      fetch('/image/submit/', {
+        method: 'POST', // or 'PUT'
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      })
+
+      window.location.replace("/image/submitted/")
+    }
+
+  // document.getElementById("submitButton").onclick = submitTask();
+
   </script>
 
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.5/dist/umd/popper.min.js" integrity="sha384-Xe+8cL9oJa6tN/veChSP7q+mnSPaj5Bcu9mPX5F5xIGE0DVittaqT5lorf0EI7Vk" crossorigin="anonymous"></script>

@@ -1,15 +1,18 @@
+import json
 from tkinter import Y
-from django.http import Http404
+from django.http import HttpResponseNotFound, HttpResponse
 from django.shortcuts import redirect, render
 from helpers import get_image_size
 from .models import ImageObject, ImageTask, Category
+from django.views.decorators.csrf import csrf_exempt
+
 
 # Create your views here.
 def complete_task(request):
-    tasks = ImageTask.objects.filter().order_by("-priority")
-    categories = Category.objects.filter(image_task=tasks[1])
+    tasks = ImageTask.objects.filter(is_complete=False).order_by("-priority")
+    categories = Category.objects.filter(image_task=tasks[0])
     return render(request, "image/index.html", {
-        "task": tasks[1],
+        "task": tasks[0],
         "categories": categories
     })
 
@@ -30,17 +33,26 @@ def add_task(request):
     else:
         return render(request, "image/add.html")
 
+@csrf_exempt
 def submit_task(request):
     if request.method == "POST":
-        task_id = request.POST["task_id"]
+        json_data = json.loads(request.body) 
+        task_id = json_data["task_id"]
         task = ImageTask.objects.get(id=int(task_id))
-        object_total = int(request.POST["object_total"])
+        object_total = int(json_data["object_total"])
         for obj_index in range(object_total):
-            x = request.POST[f"obj" + obj_index + "-x"]
-            y = request.POST[f"obj" + obj_index + "-y"]
-            w = request.POST[f"obj" + obj_index + "-w"]
-            h = request.POST[f"obj" + obj_index + "-h"]
-            ImageObject.objects.create()
-
+            x = json_data[f"obj" + str(obj_index) + "-x"]
+            y = json_data[f"obj" + str(obj_index) + "-y"]
+            w = json_data[f"obj" + str(obj_index) + "-w"]
+            h = json_data[f"obj" + str(obj_index) + "-h"]
+            category = json_data[f"obj" + str(obj_index) + "-category"]
+            category = Category.objects.get(name=category, image_task=task)
+            ImageObject.objects.create(image_task=task, x=int(x), y=int(y), w=int(w), h=int(h), category=category)
+        task.is_complete = True
+        task.save()
+        return HttpResponse("Task Completed")
     else:
-        return Http404()
+        return HttpResponseNotFound("404 Not Found")
+
+def submit_task_view(request):
+    return render(request, "image/submitted.html")
